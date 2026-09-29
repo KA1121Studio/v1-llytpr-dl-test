@@ -1,5 +1,6 @@
 [[redirects]]
-  from = "/api/watch/*"
-  to = "https://test-v1-llytpr.vercel.app/api/watch/:splat"
+  from = "/api/stream"
+  to = "https://test-v1-llytpr.vercel.app/api/stream"
   status = 200
   force = true
+  query = { v = ":v" }
