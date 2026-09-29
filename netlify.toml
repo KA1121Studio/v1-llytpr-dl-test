@@ -1,0 +1,5 @@
+[[redirects]]
+  from = "/api/watch/*"
+  to = "https://test-v1-llytpr.vercel.app/api/watch/:splat"
+  status = 200
+  force = true
