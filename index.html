@@ -172,17 +172,38 @@
       font-size: 0.8rem;
       color: #475569;
     }
-    .download-section {
+    .player-section {
       border-top: 1px solid #e2e8f0;
       padding-top: 1.4rem;
       display: flex;
       flex-direction: column;
       gap: 1rem;
     }
-    .download-label {
+    .section-label {
       font-size: 0.95rem;
       font-weight: 600;
       color: #334155;
+    }
+    .video-wrapper {
+      width: 100%;
+      background: #0f172a;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    .video-wrapper video {
+      width: 100%;
+      height: auto;
+      display: block;
+      max-height: 480px;
+      background: #000000;
+    }
+    .download-section {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
     .download-row {
       display: flex;
@@ -297,8 +318,17 @@
       </div>
     </div>
 
+    <div class="player-section">
+      <div class="section-label">再生</div>
+      <div class="video-wrapper">
+        <video id="videoPlayer" controls preload="metadata" playsinline>
+          お使いのブラウザは動画タグに対応していません。
+        </video>
+      </div>
+    </div>
+
     <div class="download-section">
-      <div class="download-label">動画をダウンロード</div>
+      <div class="section-label">ダウンロード</div>
       <div class="download-row">
         <div class="download-info">
           <span class="format-label">MP4</span>
@@ -331,6 +361,7 @@
     const likeCount = document.getElementById('likeCount');
     const uploadDate = document.getElementById('uploadDate');
     const duration = document.getElementById('duration');
+    const videoPlayer = document.getElementById('videoPlayer');
     const streamInfo = document.getElementById('streamInfo');
     const downloadLink = document.getElementById('downloadLink');
 
@@ -363,6 +394,13 @@
       btnSpinner.classList.remove('hidden');
       showStatus('データを取得しています...', 'info');
       resultContainer.classList.add('hidden');
+
+      // 前回の再生を停止してクリア
+      try {
+        videoPlayer.pause();
+        videoPlayer.removeAttribute('src');
+        videoPlayer.load();
+      } catch (e) { /* noop */ }
 
       try {
         // 詳細情報を取得（/api/watch/ID）
@@ -403,9 +441,14 @@
           thumbnail.innerHTML = '<span>サムネイルなし</span>';
         }
 
-        // 動画ストリームのダウンロードリンクを設定
-        // /api/stream?v=動画ID をそのままダウンロードリンクに
+        // 動画ストリームの URL
         const streamUrl = `/api/stream?v=${encodeURIComponent(videoId.trim())}`;
+
+        // プレーヤーにセット
+        videoPlayer.src = streamUrl;
+        videoPlayer.load();
+
+        // ダウンロードリンクを設定
         downloadLink.href = streamUrl;
         downloadLink.classList.remove('disabled');
         streamInfo.textContent = `MP4 ストリーム (${videoId.trim()})`;
