@@ -241,7 +241,6 @@
       font-size: 0.9rem;
       cursor: pointer;
       transition: background 0.2s, transform 0.1s;
-      text-decoration: none;
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -287,7 +286,7 @@
   <h1>YouTube Downloader</h1>
 
   <div class="search-box">
-    <input type="text" id="videoIdInput" placeholder="動画IDを入力 (例: KRaWnd3LJfs)" value="KRaWnd3LJfs">
+    <input type="text" id="videoIdInput" placeholder="動画ID または YouTube URL を入力" value="">
     <button id="fetchBtn">
       <span id="btnText">情報を取得</span>
       <span id="btnSpinner" class="spinner hidden"></span>
@@ -334,7 +333,7 @@
           <span class="format-label">MP4</span>
           <span class="format-desc" id="streamInfo">ストリーム情報を取得中...</span>
         </div>
-        <a id="downloadLink" class="download-btn disabled" href="#" target="_blank" rel="noopener noreferrer">ダウンロード</a>
+        <button id="downloadBtn" class="download-btn disabled" type="button">ダウンロード</button>
       </div>
     </div>
   </div>
@@ -363,7 +362,9 @@
     const duration = document.getElementById('duration');
     const videoPlayer = document.getElementById('videoPlayer');
     const streamInfo = document.getElementById('streamInfo');
-    const downloadLink = document.getElementById('downloadLink');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    let currentVideoId = null;
 
     function showStatus(text, type) {
       statusMessage.classList.remove('hidden', 'error', 'success');
@@ -383,9 +384,111 @@
       return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
 
-    async function fetchData(videoId) {
-      if (!videoId || videoId.trim() === '') {
-        showStatus('動画IDを入力してください', 'error');
+    /**
+     * 入力から動画IDを抽出
+     * 対応形式:
+     *   - 動画IDのみ: 0xOD1rhDlgo
+     *   - https://www.youtube.com/watch?v=0xOD1rhDlgo
+     *   - https://youtu.be/0xOD1rhDlgo
+     *   - https://www.youtube.com/embed/0xOD1rhDlgo
+     *   - https://www.youtube.com/shorts/0xOD1rhDlgo
+     */
+    function extractVideoId(input) {
+      if (!input) return null;
+      const trimmed = input.trim();
+
+      // すでに動画IDのみ (11文字、英数字・-・_)
+      if (/^[A-Za-z0-9_-]{11}$/.test(trimmed)) {
+        return trimmed;
+      }
+
+      // URL 形式
+      try {
+        const url = new URL(trimmed);
+        const hostname = url.hostname.replace(/^www\./, '');
+
+        // youtu.be/ID
+        if (hostname === 'youtu.be') {
+          const id = url.pathname.slice(1).split('/')[0];
+          if (/^[A-Za-z0-9_-]{11}$/.test(id)) return id;
+        }
+
+        // youtube.com/watch?v=ID
+        if (hostname === 'youtube.com' || hostname === 'm.youtube.com') {
+          const v = url.searchParams.get('v');
+          if (v && /^[A-Za-z0-9_-]{11}$/.test(v)) return v;
+
+          // /embed/ID, /shorts/ID, /v/ID
+          const pathParts = url.pathname.split('/').filter(Boolean);
+          if (pathParts.length >= 2) {
+            const prefix = pathParts[0];
+            const id = pathParts[1];
+            if (['embed', 'shorts', 'v'].includes(prefix) && /^[A-Za-z0-9_-]{11}$/.test(id)) {
+              return id;
+            }
+          }
+        }
+      } catch (e) {
+        // URL ではない
+      }
+
+      return null;
+    }
+
+    /**
+     * 直接ダウンロードを実行
+     */
+    async function downloadVideo() {
+      if (!currentVideoId) return;
+
+      const streamUrl = `/api/stream?v=${encodeURIComponent(currentVideoId)}`;
+
+      try {
+        showStatus('ダウンロードを開始しています...', 'info');
+
+        // fetch で取得して Blob として保存
+        const response = await fetch(streamUrl);
+        if (!response.ok) {
+          throw new Error(`ダウンロードに失敗しました (${response.status})`);
+        }
+
+        const blob = await response.blob();
+
+        // Content-Disposition からファイル名を取得（あれば）
+        let filename = `${currentVideoId}.mp4`;
+        const disposition = response.headers.get('Content-Disposition');
+        if (disposition) {
+          const match = disposition.match(/filename\*?=(?:UTF-8'')?["']?([^"';\n]+)/i);
+          if (match && match[1]) {
+            filename = decodeURIComponent(match[1]);
+          }
+        }
+
+        // Blob URL を作成してダウンロード
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        // メモリ解放
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+
+        showStatus('ダウンロードが完了しました', 'success');
+        setTimeout(() => hideStatus(), 3000);
+      } catch (err) {
+        console.error(err);
+        showStatus(`ダウンロードエラー: ${err.message}`, 'error');
+      }
+    }
+
+    async function fetchData(input) {
+      const videoId = extractVideoId(input);
+
+      if (!videoId) {
+        showStatus('有効な動画IDまたはYouTube URLを入力してください', 'error');
         return;
       }
 
@@ -404,7 +507,7 @@
 
       try {
         // 詳細情報を取得（/api/watch/ID）
-        const watchUrl = `/api/watch/${encodeURIComponent(videoId.trim())}`;
+        const watchUrl = `/api/watch/${encodeURIComponent(videoId)}`;
         const watchResponse = await fetch(watchUrl);
 
         if (!watchResponse.ok) {
@@ -417,6 +520,8 @@
         if (!data || !data.videoId) {
           throw new Error('無効なレスポンスです');
         }
+
+        currentVideoId = videoId;
 
         // 詳細情報を画面に反映
         videoTitle.textContent = data.title || 'タイトルなし';
@@ -442,16 +547,16 @@
         }
 
         // 動画ストリームの URL
-        const streamUrl = `/api/stream?v=${encodeURIComponent(videoId.trim())}`;
+        const streamUrl = `/api/stream?v=${encodeURIComponent(videoId)}`;
 
         // プレーヤーにセット
         videoPlayer.src = streamUrl;
         videoPlayer.load();
 
-        // ダウンロードリンクを設定
-        downloadLink.href = streamUrl;
-        downloadLink.classList.remove('disabled');
-        streamInfo.textContent = `MP4 ストリーム (${videoId.trim()})`;
+        // ダウンロードボタンを有効化
+        downloadBtn.classList.remove('disabled');
+        downloadBtn.disabled = false;
+        streamInfo.textContent = `MP4 ストリーム (${videoId})`;
 
         resultContainer.classList.remove('hidden');
         showStatus('データを取得しました', 'success');
@@ -461,6 +566,9 @@
         console.error(err);
         showStatus(`エラー: ${err.message}`, 'error');
         resultContainer.classList.add('hidden');
+        currentVideoId = null;
+        downloadBtn.classList.add('disabled');
+        downloadBtn.disabled = true;
       } finally {
         fetchBtn.disabled = false;
         btnText.textContent = '情報を取得';
@@ -477,11 +585,9 @@
       }
     });
 
-    window.addEventListener('load', () => {
-      if (videoIdInput.value.trim()) {
-        setTimeout(() => fetchData(videoIdInput.value), 300);
-      }
-    });
+    downloadBtn.addEventListener('click', downloadVideo);
+
+    // 初期入力値は空のため自動取得なし
   })();
 </script>
 </body>
