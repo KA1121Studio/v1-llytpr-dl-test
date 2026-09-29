@@ -8,19 +8,14 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
-      background: #0f0f0f;
-      color: #f1f1f1;
-      padding: 1.5rem;
-      display: flex;
-      justify-content: center;
-      min-height: 100vh;
+      background: #0f0f0f; color: #f1f1f1;
+      padding: 1.5rem; display: flex; justify-content: center; min-height: 100vh;
     }
     .app { max-width: 1000px; width: 100%; }
     h1 {
       font-size: 2rem; font-weight: 600;
       display: flex; align-items: center; gap: 0.5rem;
-      margin-bottom: 1.5rem; color: #fff;
-      letter-spacing: -0.5px;
+      margin-bottom: 1.5rem; color: #fff; letter-spacing: -0.5px;
     }
     h1 span { background: #ff0000; padding: 0.1rem 0.6rem; border-radius: 8px; font-size: 1.2rem; }
     .search-box { display: flex; gap: 10px; margin-bottom: 2rem; flex-wrap: wrap; }
@@ -70,10 +65,7 @@
     .stats { display: flex; flex-wrap: wrap; gap: 1.2rem; font-size: 0.9rem; color: #aaa; margin-top: 4px; }
     .stats span { display: flex; align-items: center; gap: 4px; }
     .badge { background: #2a2a2a; border-radius: 20px; padding: 0.2rem 0.8rem; font-size: 0.8rem; color: #ddd; }
-    .tabs {
-      display: flex; gap: 8px; border-bottom: 1px solid #2a2a2a;
-      padding-bottom: 8px; flex-wrap: wrap;
-    }
+    .tabs { display: flex; gap: 8px; border-bottom: 1px solid #2a2a2a; padding-bottom: 8px; flex-wrap: wrap; }
     .tab-btn {
       background: transparent; border: none; color: #aaa;
       padding: 0.5rem 1.2rem; border-radius: 30px;
@@ -106,7 +98,6 @@
     }
     .download-btn:hover { background: #cc0000; }
     .download-btn:active { transform: scale(0.96); }
-    .download-btn.disabled { background: #444; pointer-events: none; opacity: 0.6; }
     .empty-state { text-align: center; padding: 3rem 1rem; color: #666; font-size: 1rem; }
     .footer-note {
       margin-top: 1.5rem; font-size: 0.75rem; color: #555;
@@ -123,7 +114,6 @@
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #1a1a1a; border-radius: 10px; }
     ::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: #666; }
   </style>
 </head>
 <body>
@@ -131,7 +121,7 @@
   <h1><span>▶</span> YouTube DL</h1>
 
   <div class="search-box">
-    <input type="text" id="videoIdInput" placeholder="動画IDを入力 (例: 09R8_2nJtjg)" value="09R8_2nJtjg">
+    <input type="text" id="videoIdInput" placeholder="動画IDを入力 (例: KRaWnd3LJfs)" value="KRaWnd3LJfs">
     <button id="fetchBtn">
       <span id="btnIcon">🔍</span>
       <span id="btnText">取得</span>
@@ -171,7 +161,7 @@
   </div>
 
   <div class="footer-note">
-    API プロキシ経由: /api/watch/ID → Vercel
+    API: /api/stream?v=ID （Netlify プロキシ経由）
   </div>
 </div>
 
@@ -228,7 +218,6 @@
       tabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
       if (currentData) renderStreams(currentData);
     }
-
     tabBtns.forEach(btn => btn.addEventListener('click', () => setActiveTab(btn.dataset.tab)));
 
     function renderStreams(data) {
@@ -339,35 +328,38 @@
       resultContainer.classList.add('hidden');
 
       try {
-        // ★★★ ここが変更点: 相対パスで Netlify プロキシ経由 ★★★
-        const apiUrl = `/api/watch/${encodeURIComponent(videoId.trim())}`;
+        // ★★★ 変更点: /api/stream?v=ID 形式 ★★★
+        const apiUrl = `/api/stream?v=${encodeURIComponent(videoId.trim())}`;
         const response = await fetch(apiUrl);
 
         if (!response.ok) throw new Error(`APIエラー: ${response.status} ${response.statusText}`);
 
         const data = await response.json();
         console.log('API response:', data);
-        if (!data || !data.videoId) throw new Error('無効なレスポンス: videoId がありません');
+
+        // videoId が無い場合でもタイトルがあればOKにする（API によって返却形式が違うため）
+        if (!data || (!data.videoId && !data.title)) {
+          throw new Error('無効なレスポンス: 動画情報がありません');
+        }
 
         currentData = data;
+
         videoTitle.textContent = data.title || 'タイトルなし';
-        channelName.textContent = data.channel?.name || '不明なチャンネル';
-        if (data.channel?.avatar) {
-          channelAvatar.src = data.channel.avatar;
+        channelName.textContent = data.channel?.name || data.channelName || '不明なチャンネル';
+        if (data.channel?.avatar || data.channelAvatar) {
+          channelAvatar.src = data.channel?.avatar || data.channelAvatar;
           channelAvatar.style.display = 'inline-block';
         } else {
           channelAvatar.style.display = 'none';
         }
         viewCount.textContent = `👁 ${data.viewCount || '0'}`;
         likeCount.textContent = `👍 ${data.likeCount || '0'}`;
-        uploadDate.textContent = `📅 ${data.dateText || '不明'}`;
+        uploadDate.textContent = `📅 ${data.dateText || data.publishDate || '不明'}`;
         duration.textContent = formatDuration(data.lengthSeconds);
 
-        if (data.videoId) {
-          thumbnail.innerHTML = `<img src="https://i.ytimg.com/vi/${data.videoId}/hqdefault.jpg" alt="thumbnail" onerror="this.parentElement.innerHTML='<span>NO IMAGE</span>'">`;
-        } else {
-          thumbnail.innerHTML = '<span>サムネイルなし</span>';
-        }
+        // サムネイル
+        const thumbId = data.videoId || videoId.trim();
+        thumbnail.innerHTML = `<img src="https://i.ytimg.com/vi/${thumbId}/hqdefault.jpg" alt="thumbnail" onerror="this.parentElement.innerHTML='<span>NO IMAGE</span>'">`;
 
         setActiveTab(activeTab);
         resultContainer.classList.remove('hidden');
@@ -392,7 +384,8 @@
     });
 
     window.addEventListener('load', () => {
-      if (videoIdInput.value.trim() === '09R8_2nJtjg') {
+      // デフォルト ID で自動取得
+      if (videoIdInput.value.trim()) {
         setTimeout(() => fetchVideoData(videoIdInput.value), 300);
       }
     });
