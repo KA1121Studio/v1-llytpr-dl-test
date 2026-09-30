@@ -1,4 +1,3 @@
-
 [build]
   functions = "netlify/functions"
   publish = "public"
@@ -20,7 +19,7 @@
   status = 200
   force = true
 
-# /api/watch/* → Vercel にプロキシ（任意）
+# /api/watch/* → Vercel にプロキシ
 [[redirects]]
   from = "/api/watch/*"
   to = "https://test-v1-llytpr.vercel.app/api/watch/:splat"
