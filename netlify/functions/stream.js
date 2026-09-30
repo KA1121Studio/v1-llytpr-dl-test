@@ -1,5 +1,5 @@
 // netlify/functions/stream.js
-// /api/stream?v=ID → Invidious 互換の JSON を返す
+// /api/json?v=ID → 整形済み JSON を返す
 
 const VERCEL_WATCH = 'https://test-v1-llytpr.vercel.app/api/watch';
 const VERCEL_STREAM = 'https://test-v1-llytpr.vercel.app/api/stream';
@@ -34,7 +34,6 @@ exports.handler = async (event) => {
   }
 
   try {
-    // 1) Vercel の /api/watch/ID から詳細情報を取得
     const watchUrl = `${VERCEL_WATCH}/${encodeURIComponent(videoId)}`;
     const watchRes = await fetch(watchUrl);
 
@@ -48,18 +47,13 @@ exports.handler = async (event) => {
 
     const data = await watchRes.json();
 
+    // 絶対URLを構築（Netlify のドメインに追随）
+    const proto = event.headers['x-forwarded-proto'] || 'https';
+    const host = event.headers['host'] || 'luminous-yeot-d2da5d.netlify.app';
+    const baseUrl = `${proto}://${host}`;
+    const streamUrl = `${baseUrl}/api/stream?v=${encodeURIComponent(videoId)}`;
 
-    // 絶対URLを構築
-// リクエストのホスト名から動的に生成（Netlify のドメイン変更に追随）
-const proto = event.headers['x-forwarded-proto'] || 'https';
-const host = event.headers['host'] || 'luminous-yeot-d2da5d.netlify.app';
-const baseUrl = `${proto}://${host}`;
-const videoUrl = `${baseUrl}/api/video?v=${encodeURIComponent(videoId)}`;
-
-    // 3) Invidious 互換の formatStreams を構築
-    //    フロントは f.type.includes("video/mp4")
-    //    かつ (f.qualityLabel.includes("360") || f.itag === 18)
-    //    を探すため、それにマッチさせる
+    // Invidious 互換の formatStreams
     const formatStreams = [
       {
         itag: '18',
@@ -72,13 +66,12 @@ const videoUrl = `${baseUrl}/api/video?v=${encodeURIComponent(videoId)}`;
         fps: 25,
         container: 'mp4',
         encoding: 'h264',
-        url: videoUrl,
+        url: streamUrl,
         hasAudio: true,
         hasVideo: true,
       },
     ];
 
-    // 4) レスポンス JSON を構築
     const responseJson = {
       type: 'video',
       title: data.title || null,
@@ -92,15 +85,11 @@ const videoUrl = `${baseUrl}/api/video?v=${encodeURIComponent(videoId)}`;
       isLive: data.isLive || false,
       channel: data.channel || null,
       related: data.related || [],
-
-      // フロントが参照するプロパティ
       formatStreams,
       adaptiveFormats: [],
-
-      // 各種 URL（複数のキーで参照可能に）
-      streamUrl: videoUrl,
-      videoUrl: videoUrl,
-      defaultStreamUrl: videoUrl,
+      streamUrl: streamUrl,
+      videoUrl: streamUrl,
+      defaultStreamUrl: streamUrl,
       originalStreamUrl: `${VERCEL_STREAM}?v=${encodeURIComponent(videoId)}`,
     };
 
@@ -114,7 +103,7 @@ const videoUrl = `${baseUrl}/api/video?v=${encodeURIComponent(videoId)}`;
       body: JSON.stringify(responseJson, null, 2),
     };
   } catch (err) {
-    console.error('stream error:', err);
+    console.error('json error:', err);
     return {
       statusCode: 500,
       headers: { ...headers, 'Content-Type': 'application/json' },
