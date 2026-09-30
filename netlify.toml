@@ -5,23 +5,23 @@
 [build.environment]
   NODE_VERSION = "18"
 
-# /api/stream → JSON（Netlify Function）
+# /api/stream?v=ID → Vercel の /api/stream?v=ID に直接転送（mp4）
 [[redirects]]
   from = "/api/stream"
-  to = "/.netlify/functions/stream"
+  to = "https://test-v1-llytpr.vercel.app/api/stream"
   status = 200
   force = true
 
-# /api/video → mp4（Netlify Function）
-[[redirects]]
-  from = "/api/video"
-  to = "/.netlify/functions/video"
-  status = 200
-  force = true
-
-# /api/watch/* → Vercel にプロキシ
+# /api/watch/* → Vercel に直接転送（JSON）
 [[redirects]]
   from = "/api/watch/*"
   to = "https://test-v1-llytpr.vercel.app/api/watch/:splat"
+  status = 200
+  force = true
+
+# /api/json?v=ID → Netlify Function（整形済み JSON）
+[[redirects]]
+  from = "/api/json"
+  to = "/.netlify/functions/stream"
   status = 200
   force = true
