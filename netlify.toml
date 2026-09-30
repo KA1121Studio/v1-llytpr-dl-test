@@ -1,11 +1,28 @@
+
+[build]
+  functions = "netlify/functions"
+  publish = "public"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# /api/stream → JSON（Netlify Function）
 [[redirects]]
-  from = "/api/watch/*"
-  to = "https://test-v1-llytpr.vercel.app/api/watch/:splat"
+  from = "/api/stream"
+  to = "/.netlify/functions/stream"
   status = 200
   force = true
 
+# /api/video → mp4（Netlify Function）
 [[redirects]]
-  from = "/api/stream"
-  to = "https://test-v1-llytpr.vercel.app/api/stream"
+  from = "/api/video"
+  to = "/.netlify/functions/video"
+  status = 200
+  force = true
+
+# /api/watch/* → Vercel にプロキシ（任意）
+[[redirects]]
+  from = "/api/watch/*"
+  to = "https://test-v1-llytpr.vercel.app/api/watch/:splat"
   status = 200
   force = true
