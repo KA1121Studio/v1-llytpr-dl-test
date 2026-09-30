@@ -48,8 +48,13 @@ exports.handler = async (event) => {
 
     const data = await watchRes.json();
 
-    // 2) Netlify 経由の動画 URL
-    const videoUrl = `/api/video?v=${encodeURIComponent(videoId)}`;
+
+    // 絶対URLを構築
+// リクエストのホスト名から動的に生成（Netlify のドメイン変更に追随）
+const proto = event.headers['x-forwarded-proto'] || 'https';
+const host = event.headers['host'] || 'luminous-yeot-d2da5d.netlify.app';
+const baseUrl = `${proto}://${host}`;
+const videoUrl = `${baseUrl}/api/video?v=${encodeURIComponent(videoId)}`;
 
     // 3) Invidious 互換の formatStreams を構築
     //    フロントは f.type.includes("video/mp4")
