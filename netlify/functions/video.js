@@ -60,7 +60,6 @@ exports.handler = async (event) => {
       'Cache-Control': 'public, max-age=3600',
     };
 
-    // Content-Range があれば引き継ぐ
     const contentRange = streamRes.headers.get('content-range');
     if (contentRange) {
       responseHeaders['Content-Range'] = contentRange;
