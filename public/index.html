@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YouTube Downloader</title>
+  <title>API Checker</title>
   <style>
     * {
       box-sizing: border-box;
@@ -21,20 +20,25 @@
       justify-content: center;
     }
     .app {
-      max-width: 960px;
+      max-width: 1080px;
       width: 100%;
     }
     h1 {
       font-size: 1.8rem;
       font-weight: 600;
       color: #0f172a;
-      margin-bottom: 1.8rem;
+      margin-bottom: 0.5rem;
       letter-spacing: -0.5px;
+    }
+    .subtitle {
+      font-size: 0.95rem;
+      color: #64748b;
+      margin-bottom: 1.8rem;
     }
     .search-box {
       display: flex;
       gap: 12px;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
       flex-wrap: wrap;
     }
     .search-box input {
@@ -63,9 +67,6 @@
       color: #ffffff;
       cursor: pointer;
       transition: background 0.2s, transform 0.1s;
-      display: flex;
-      align-items: center;
-      gap: 8px;
       white-space: nowrap;
     }
     .search-box button:hover {
@@ -99,165 +100,154 @@
     .status.success {
       border-left-color: #22c55e;
     }
-    .card {
+    .status.info {
+      border-left-color: #3b82f6;
+    }
+
+    .endpoint-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .endpoint {
       background: #ffffff;
-      border-radius: 16px;
-      padding: 1.8rem;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-      border: 1px solid #e2e8f0;
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-    .video-header {
-      display: flex;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-    }
-    .thumbnail {
-      width: 200px;
-      height: 112px;
-      background: #f1f5f9;
       border-radius: 12px;
-      overflow: hidden;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #94a3b8;
-      font-size: 0.85rem;
       border: 1px solid #e2e8f0;
-    }
-    .thumbnail img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .video-meta {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-    }
-    .video-title {
-      font-size: 1.3rem;
-      font-weight: 600;
-      line-height: 1.4;
-      color: #0f172a;
-    }
-    .channel {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: #64748b;
-      font-size: 0.9rem;
-    }
-    .channel img {
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      background: #e2e8f0;
-    }
-    .stats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.2rem;
-      font-size: 0.88rem;
-      color: #64748b;
-      margin-top: 4px;
-    }
-    .badge {
-      background: #f1f5f9;
-      border-radius: 20px;
-      padding: 0.15rem 0.75rem;
-      font-size: 0.8rem;
-      color: #475569;
-    }
-    .player-section {
-      border-top: 1px solid #e2e8f0;
-      padding-top: 1.4rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .section-label {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #334155;
-    }
-    .video-wrapper {
-      width: 100%;
-      background: #0f172a;
-      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
       overflow: hidden;
-      position: relative;
     }
-    .video-wrapper video {
-      width: 100%;
-      height: auto;
-      display: block;
-      max-height: 480px;
-      background: #000000;
-    }
-    .download-section {
-      border-top: 1px solid #e2e8f0;
-      padding-top: 1.4rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .download-row {
+    .endpoint-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #f8fafc;
       padding: 0.9rem 1.2rem;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 10px;
     }
-    .download-info {
+    .endpoint-name {
       display: flex;
       align-items: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-    .format-label {
+      gap: 10px;
       font-weight: 600;
       color: #0f172a;
       font-size: 0.95rem;
     }
-    .format-desc {
-      font-size: 0.85rem;
-      color: #64748b;
-    }
-    .download-btn {
+    .method {
+      display: inline-block;
       background: #3b82f6;
-      border: none;
-      border-radius: 10px;
-      padding: 0.6rem 1.5rem;
       color: #ffffff;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.55rem;
+      border-radius: 5px;
+      letter-spacing: 0.5px;
     }
-    .download-btn:hover {
+    .endpoint-url {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.85rem;
+      color: #475569;
+      word-break: break-all;
+    }
+    .endpoint-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.6rem;
+      border-radius: 20px;
+      font-weight: 600;
+      background: #e2e8f0;
+      color: #475569;
+    }
+    .badge.ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .badge.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .badge.loading {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .badge.type-json {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .badge.type-video {
+      background: #ede9fe;
+      color: #5b21b6;
+    }
+    .endpoint-body {
+      padding: 1rem 1.2rem;
+      background: #ffffff;
+    }
+    .endpoint-body pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      overflow: auto;
+      max-height: 320px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .endpoint-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 0.8rem;
+      flex-wrap: wrap;
+    }
+    .btn-link {
+      display: inline-block;
+      background: #e2e8f0;
+      color: #0f172a;
+      border: none;
+      border-radius: 8px;
+      padding: 0.4rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-link:hover {
+      background: #cbd5e1;
+    }
+    .btn-link.primary {
+      background: #3b82f6;
+      color: #ffffff;
+    }
+    .btn-link.primary:hover {
       background: #2563eb;
     }
-    .download-btn:active {
-      transform: scale(0.96);
+    .hidden {
+      display: none !important;
     }
-    .download-btn.disabled {
-      background: #94a3b8;
-      pointer-events: none;
-      opacity: 0.7;
+    .video-check {
+      margin-top: 0.8rem;
     }
-    .note {
+    .video-check video {
+      width: 100%;
+      max-height: 320px;
+      background: #000;
+      border-radius: 8px;
+    }
+    .placeholder {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      padding: 0.5rem 0;
+    }
+    .footer-note {
       font-size: 0.8rem;
       color: #94a3b8;
       text-align: center;
@@ -265,136 +255,81 @@
       padding-top: 1.2rem;
       border-top: 1px solid #e2e8f0;
     }
-    .hidden {
-      display: none !important;
-    }
-    .spinner {
-      width: 18px;
-      height: 18px;
-      border: 2px solid rgba(255, 255, 255, 0.4);
-      border-top-color: #ffffff;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      display: inline-block;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
   </style>
 </head>
 <body>
 <div class="app">
-  <h1>YouTube Downloader</h1>
+  <h1>API Checker</h1>
+  <p class="subtitle">動画ID または YouTube URL を入力して、各エンドポイントのレスポンスを確認します。</p>
 
   <div class="search-box">
-    <input type="text" id="videoIdInput" placeholder="動画ID または YouTube URL を入力" value="">
-    <button id="fetchBtn">
-      <span id="btnText">情報を取得</span>
-      <span id="btnSpinner" class="spinner hidden"></span>
-    </button>
+    <input type="text" id="videoIdInput" placeholder="動画ID または YouTube URL" value="">
+    <button id="checkBtn">チェック開始</button>
   </div>
 
   <div id="statusMessage" class="status hidden">
     <span id="statusText">準備完了</span>
   </div>
 
-  <div id="resultContainer" class="card hidden">
-    <div class="video-header">
-      <div class="thumbnail" id="thumbnail">
-        <span>サムネイル</span>
-      </div>
-      <div class="video-meta">
-        <div class="video-title" id="videoTitle">タイトル</div>
-        <div class="channel" id="channelInfo">
-          <img id="channelAvatar" src="" alt="" onerror="this.style.display='none'">
-          <span id="channelName">チャンネル名</span>
-        </div>
-        <div class="stats">
-          <span id="viewCount">0 回視聴</span>
-          <span id="likeCount">0 いいね</span>
-          <span id="uploadDate">日付不明</span>
-          <span id="duration" class="badge">0:00</span>
-        </div>
-      </div>
-    </div>
+  <div class="endpoint-list" id="endpointList"></div>
 
-    <div class="player-section">
-      <div class="section-label">再生</div>
-      <div class="video-wrapper">
-        <video id="videoPlayer" controls preload="metadata" playsinline>
-          お使いのブラウザは動画タグに対応していません。
-        </video>
-      </div>
-    </div>
-
-    <div class="download-section">
-      <div class="section-label">ダウンロード</div>
-      <div class="download-row">
-        <div class="download-info">
-          <span class="format-label">MP4</span>
-          <span class="format-desc" id="streamInfo">ストリーム情報を取得中...</span>
-        </div>
-        <button id="downloadBtn" class="download-btn disabled" type="button">ダウンロード</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="note">
-    詳細情報: /api/watch/ID ・ ストリーム: /api/stream?v=ID
+  <div class="footer-note">
+    /api/watch/ID ・ /api/stream?v=ID ・ /api/json?v=ID
   </div>
 </div>
 
 <script>
   (function() {
     const videoIdInput = document.getElementById('videoIdInput');
-    const fetchBtn = document.getElementById('fetchBtn');
-    const btnText = document.getElementById('btnText');
-    const btnSpinner = document.getElementById('btnSpinner');
+    const checkBtn = document.getElementById('checkBtn');
     const statusMessage = document.getElementById('statusMessage');
     const statusText = document.getElementById('statusText');
-    const resultContainer = document.getElementById('resultContainer');
-    const thumbnail = document.getElementById('thumbnail');
-    const videoTitle = document.getElementById('videoTitle');
-    const channelAvatar = document.getElementById('channelAvatar');
-    const channelName = document.getElementById('channelName');
-    const viewCount = document.getElementById('viewCount');
-    const likeCount = document.getElementById('likeCount');
-    const uploadDate = document.getElementById('uploadDate');
-    const duration = document.getElementById('duration');
-    const videoPlayer = document.getElementById('videoPlayer');
-    const streamInfo = document.getElementById('streamInfo');
-    const downloadBtn = document.getElementById('downloadBtn');
+    const endpointList = document.getElementById('endpointList');
 
-    let currentVideoId = null;
-    let currentStreamUrl = null;
+    // チェック対象のエンドポイント定義
+    const ENDPOINTS = [
+      {
+        id: 'watch',
+        name: '詳細情報 (JSON)',
+        method: 'GET',
+        url: (id) => `/api/watch/${encodeURIComponent(id)}`,
+        type: 'json',
+        description: 'Vercel の /api/watch/ID を直接プロキシ',
+      },
+      {
+        id: 'stream',
+        name: '動画ストリーム (mp4)',
+        method: 'GET',
+        url: (id) => `/api/stream?v=${encodeURIComponent(id)}`,
+        type: 'video',
+        description: 'Vercel の /api/stream?v=ID を直接プロキシ',
+      },
+      {
+        id: 'json',
+        name: '整形済み JSON',
+        method: 'GET',
+        url: (id) => `/api/json?v=${encodeURIComponent(id)}`,
+        type: 'json',
+        description: 'Netlify Function で整形した JSON',
+      },
+    ];
 
     function showStatus(text, type) {
-      statusMessage.classList.remove('hidden', 'error', 'success');
-      if (type === 'error') statusMessage.classList.add('error');
-      if (type === 'success') statusMessage.classList.add('success');
+      statusMessage.classList.remove('hidden', 'error', 'success', 'info');
+      if (type) statusMessage.classList.add(type);
       statusText.textContent = text;
     }
     function hideStatus() {
       statusMessage.classList.add('hidden');
-    }
-    function formatDuration(seconds) {
-      if (!seconds && seconds !== 0) return '--:--';
-      const hrs = Math.floor(seconds / 3600);
-      const mins = Math.floor((seconds % 3600) / 60);
-      const secs = Math.floor(seconds % 60);
-      if (hrs > 0) return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-      return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
 
     function extractVideoId(input) {
       if (!input) return null;
       const trimmed = input.trim();
       if (/^[A-Za-z0-9_-]{11}$/.test(trimmed)) return trimmed;
-
       try {
         const url = new URL(trimmed);
         const hostname = url.hostname.replace(/^www\./, '');
-
         if (hostname === 'youtu.be') {
           const id = url.pathname.slice(1).split('/')[0];
           if (/^[A-Za-z0-9_-]{11}$/.test(id)) return id;
@@ -415,164 +350,230 @@
       return null;
     }
 
-    /**
-     * ストリーム JSON から実際に再生・ダウンロード可能な URL を取得
-     * 優先順位:
-     *   1. formatStreams[0] (音声+映像が一緒の MP4, 360p)
-     *   2. adaptiveFormats から video+audio を探す（通常は無い）
-     */
-    function extractStreamUrl(streamData) {
-      if (!streamData) return null;
-
-      // formatStreams がある場合は最初の要素（通常 360p MP4）
-      if (Array.isArray(streamData.formatStreams) && streamData.formatStreams.length > 0) {
-        return streamData.formatStreams[0].url || null;
-      }
-
-      // フォールバック: adaptiveFormats から video/mp4 の最初のもの
-      if (Array.isArray(streamData.adaptiveFormats) && streamData.adaptiveFormats.length > 0) {
-        const videoFormat = streamData.adaptiveFormats.find(f =>
-          f.type && f.type.startsWith('video/mp4')
-        );
-        if (videoFormat && videoFormat.url) return videoFormat.url;
-      }
-
-      return null;
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
-    function downloadVideo() {
-      if (!currentStreamUrl) {
-        showStatus('ストリームURLがありません', 'error');
-        return;
+    function renderSkeleton() {
+      endpointList.innerHTML = '';
+      ENDPOINTS.forEach((ep) => {
+        const el = document.createElement('div');
+        el.className = 'endpoint';
+        el.dataset.endpointId = ep.id;
+        el.innerHTML = `
+          <div class="endpoint-header">
+            <div class="endpoint-name">
+              <span class="method">${ep.method}</span>
+              <span>${escapeHtml(ep.name)}</span>
+            </div>
+            <div class="endpoint-meta">
+              <span class="badge" data-role="status">待機中</span>
+              <span class="badge" data-role="type">-</span>
+            </div>
+          </div>
+          <div class="endpoint-body">
+            <div class="endpoint-url" data-role="url">-</div>
+            <div class="placeholder" data-role="placeholder">チェック開始を押してください</div>
+            <pre class="hidden" data-role="pre"></pre>
+            <div class="video-check hidden" data-role="video"></div>
+            <div class="endpoint-actions hidden" data-role="actions"></div>
+          </div>
+        `;
+        endpointList.appendChild(el);
+      });
+    }
+
+    function setEndpointStatus(endpointId, statusText, statusClass) {
+      const el = endpointList.querySelector(`[data-endpoint-id="${endpointId}"]`);
+      if (!el) return;
+      const badge = el.querySelector('[data-role="status"]');
+      badge.textContent = statusText;
+      badge.className = 'badge';
+      if (statusClass) badge.classList.add(statusClass);
+    }
+
+    function setEndpointUrl(endpointId, url) {
+      const el = endpointList.querySelector(`[data-endpoint-id="${endpointId}"]`);
+      if (!el) return;
+      el.querySelector('[data-role="url"]').textContent = url;
+    }
+
+    function setEndpointType(endpointId, typeLabel, typeClass) {
+      const el = endpointList.querySelector(`[data-endpoint-id="${endpointId}"]`);
+      if (!el) return;
+      const badge = el.querySelector('[data-role="type"]');
+      badge.textContent = typeLabel;
+      badge.className = 'badge';
+      if (typeClass) badge.classList.add(typeClass);
+    }
+
+    function setEndpointPlaceholder(endpointId, text) {
+      const el = endpointList.querySelector(`[data-endpoint-id="${endpointId}"]`);
+      if (!el) return;
+      const ph = el.querySelector('[data-role="placeholder"]');
+      ph.textContent = text;
+      ph.classList.remove('hidden');
+      el.querySelector('[data-role="pre"]').classList.add('hidden');
+      el.querySelector('[data-role="video"]').classList.add('hidden');
+      el.querySelector('[data-role="actions"]').classList.add('hidden');
+    }
+
+    function showEndpointPre(endpointId, text) {
+      const el = endpointList.querySelector(`[data-endpoint-id="${endpointId}"]`);
+      if (!el) return;
+      el.querySelector('[data-role="placeholder"]').classList.add('hidden');
+      el.querySelector('[data-role="video"]').classList.add('hidden');
+      const pre = el.querySelector('[data-role="pre"]');
+      pre.textContent = text;
+      pre.classList.remove('hidden');
+      el.querySelector('[data-role="actions"]').classList.remove('hidden');
+    }
+
+    function showEndpointVideo(endpointId, url) {
+      const el = endpointList.querySelector(`[data-endpoint-id="${endpointId}"]`);
+      if (!el) return;
+      el.querySelector('[data-role="placeholder"]').classList.add('hidden');
+      el.querySelector('[data-role="pre"]').classList.add('hidden');
+      const videoWrap = el.querySelector('[data-role="video"]');
+      videoWrap.innerHTML = `<video controls preload="metadata" src="${escapeHtml(url)}"></video>`;
+      videoWrap.classList.remove('hidden');
+      el.querySelector('[data-role="actions"]').classList.remove('hidden');
+    }
+
+    function setEndpointActions(endpointId, url, downloadName) {
+      const el = endpointList.querySelector(`[data-endpoint-id="${endpointId}"]`);
+      if (!el) return;
+      const actions = el.querySelector('[data-role="actions"]');
+      actions.innerHTML = `
+        <a class="btn-link primary" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">新しいタブで開く</a>
+        ${downloadName ? `<a class="btn-link" href="${escapeHtml(url)}" download="${escapeHtml(downloadName)}">ダウンロード</a>` : ''}
+        <button class="btn-link" type="button" data-role="copy">URLをコピー</button>
+      `;
+      const copyBtn = actions.querySelector('[data-role="copy"]');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(url).then(() => {
+            copyBtn.textContent = 'コピーしました';
+            setTimeout(() => { copyBtn.textContent = 'URLをコピー'; }, 1500);
+          });
+        });
+      }
+    }
+
+    async function checkJsonEndpoint(ep, videoId) {
+      const url = ep.url(videoId);
+      setEndpointUrl(ep.id, url);
+      setEndpointStatus(ep.id, '取得中...', 'loading');
+      setEndpointType(ep.id, '-', null);
+      setEndpointPlaceholder(ep.id, '取得中...');
+
+      try {
+        const res = await fetch(url);
+        const contentType = res.headers.get('content-type') || '';
+        const text = await res.text();
+
+        if (contentType.includes('application/json')) {
+          setEndpointType(ep.id, 'JSON', 'type-json');
+        } else {
+          setEndpointType(ep.id, contentType || 'unknown', null);
+        }
+
+        let display = text;
+        try {
+          const parsed = JSON.parse(text);
+          display = JSON.stringify(parsed, null, 2);
+        } catch (e) {
+          // JSON でない場合はそのまま表示
+        }
+
+        if (res.ok) {
+          setEndpointStatus(ep.id, `${res.status} OK`, 'ok');
+        } else {
+          setEndpointStatus(ep.id, `${res.status} ERROR`, 'error');
+        }
+        showEndpointPre(ep.id, display);
+        setEndpointActions(ep.id, url, null);
+      } catch (err) {
+        setEndpointStatus(ep.id, 'NETWORK ERROR', 'error');
+        setEndpointType(ep.id, '-', null);
+        showEndpointPre(ep.id, `Error: ${err.message}`);
+        setEndpointActions(ep.id, url, null);
+      }
+    }
+
+    async function checkVideoEndpoint(ep, videoId) {
+      const url = ep.url(videoId);
+      setEndpointUrl(ep.id, url);
+      setEndpointStatus(ep.id, '取得中...', 'loading');
+      setEndpointType(ep.id, '-', null);
+      setEndpointPlaceholder(ep.id, '取得中...');
+
+      try {
+        // HEAD ではなく GET で Content-Type を確認（HEAD は環境により未対応）
+        const res = await fetch(url, { method: 'GET', headers: { 'Range': 'bytes=0-0' } });
+        const contentType = res.headers.get('content-type') || '';
+        const contentLength = res.headers.get('content-length') || '';
+
+        // 中身は使わないので読み捨て
+        try { await res.arrayBuffer(); } catch (e) { /* noop */ }
+
+        setEndpointType(ep.id, contentType || 'unknown', 'type-video');
+
+        if (res.ok || res.status === 206) {
+          setEndpointStatus(ep.id, `${res.status} OK${contentLength ? ' / ' + contentLength + 'B' : ''}`, 'ok');
+          showEndpointVideo(ep.id, url);
+        } else {
+          setEndpointStatus(ep.id, `${res.status} ERROR`, 'error');
+          showEndpointPre(ep.id, `Status: ${res.status}\nContent-Type: ${contentType}\nContent-Length: ${contentLength}`);
+        }
+        setEndpointActions(ep.id, url, `${videoId}.mp4`);
+      } catch (err) {
+        setEndpointStatus(ep.id, 'NETWORK ERROR', 'error');
+        setEndpointType(ep.id, '-', null);
+        showEndpointPre(ep.id, `Error: ${err.message}`);
+        setEndpointActions(ep.id, url, `${videoId}.mp4`);
+      }
+    }
+
+    async function runChecks(videoId) {
+      renderSkeleton();
+      showStatus(`チェック中: ${videoId}`, 'info');
+
+      for (const ep of ENDPOINTS) {
+        if (ep.type === 'json') {
+          await checkJsonEndpoint(ep, videoId);
+        } else if (ep.type === 'video') {
+          await checkVideoEndpoint(ep, videoId);
+        }
       }
 
-      const a = document.createElement('a');
-      a.href = currentStreamUrl;
-      a.download = `${currentVideoId}.mp4`;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-
-      showStatus('ダウンロードを開始しました', 'success');
+      showStatus(`チェック完了: ${videoId}`, 'success');
       setTimeout(() => hideStatus(), 3000);
     }
 
-    async function fetchData(input) {
-      const videoId = extractVideoId(input);
+    checkBtn.addEventListener('click', () => {
+      const videoId = extractVideoId(videoIdInput.value);
       if (!videoId) {
         showStatus('有効な動画IDまたはYouTube URLを入力してください', 'error');
         return;
       }
+      runChecks(videoId);
+    });
 
-      fetchBtn.disabled = true;
-      btnText.textContent = '取得中...';
-      btnSpinner.classList.remove('hidden');
-      showStatus('データを取得しています...', 'info');
-      resultContainer.classList.add('hidden');
-
-      try {
-        videoPlayer.pause();
-        videoPlayer.removeAttribute('src');
-        videoPlayer.load();
-      } catch (e) { /* noop */ }
-
-      try {
-        // 1) 詳細情報を取得
-        const watchUrl = `/api/watch/${encodeURIComponent(videoId)}`;
-        const watchResponse = await fetch(watchUrl);
-        if (!watchResponse.ok) {
-          throw new Error(`詳細情報の取得に失敗しました (${watchResponse.status})`);
-        }
-        const watchData = await watchResponse.json();
-        console.log('Watch API response:', watchData);
-
-        if (!watchData || !watchData.videoId) {
-          throw new Error('無効な詳細情報レスポンスです');
-        }
-
-        // 2) ストリーム情報を取得 (Invidious 形式 JSON)
-        const streamApiUrl = `/api/stream?v=${encodeURIComponent(videoId)}`;
-        const streamResponse = await fetch(streamApiUrl);
-        if (!streamResponse.ok) {
-          throw new Error(`ストリーム情報の取得に失敗しました (${streamResponse.status})`);
-        }
-        const streamData = await streamResponse.json();
-        console.log('Stream API response:', streamData);
-
-        // 3) 再生可能な URL を抽出
-        const streamUrl = extractStreamUrl(streamData);
-        if (!streamUrl) {
-          throw new Error('再生可能なストリームが見つかりませんでした');
-        }
-
-        currentVideoId = videoId;
-        currentStreamUrl = streamUrl;
-
-        // 4) 詳細情報を画面に反映
-        videoTitle.textContent = watchData.title || 'タイトルなし';
-        channelName.textContent = watchData.channel?.name || '不明なチャンネル';
-
-        if (watchData.channel?.avatar) {
-          channelAvatar.src = watchData.channel.avatar;
-          channelAvatar.style.display = 'inline-block';
-        } else {
-          channelAvatar.style.display = 'none';
-        }
-
-        viewCount.textContent = `${watchData.viewCount || '0'} 回視聴`;
-        likeCount.textContent = `${watchData.likeCount || '0'} いいね`;
-        uploadDate.textContent = watchData.dateText || '日付不明';
-        duration.textContent = formatDuration(watchData.lengthSeconds);
-
-        if (watchData.videoId) {
-          thumbnail.innerHTML = `<img src="https://i.ytimg.com/vi/${watchData.videoId}/hqdefault.jpg" alt="thumbnail" onerror="this.parentElement.innerHTML='<span>NO IMAGE</span>'">`;
-        } else {
-          thumbnail.innerHTML = '<span>サムネイルなし</span>';
-        }
-
-        // 5) プレーヤーとダウンロードを設定
-        videoPlayer.src = streamUrl;
-        videoPlayer.load();
-
-        downloadBtn.classList.remove('disabled');
-        downloadBtn.disabled = false;
-
-        // ストリームの品質を表示
-        const fmt = streamData.formatStreams && streamData.formatStreams[0];
-        if (fmt && fmt.qualityLabel) {
-          streamInfo.textContent = `${fmt.qualityLabel} (${fmt.container || 'mp4'})`;
-        } else {
-          streamInfo.textContent = `MP4 ストリーム (${videoId})`;
-        }
-
-        resultContainer.classList.remove('hidden');
-        showStatus('データを取得しました', 'success');
-        setTimeout(() => hideStatus(), 3000);
-
-      } catch (err) {
-        console.error(err);
-        showStatus(`エラー: ${err.message}`, 'error');
-        resultContainer.classList.add('hidden');
-        currentVideoId = null;
-        currentStreamUrl = null;
-        downloadBtn.classList.add('disabled');
-        downloadBtn.disabled = true;
-      } finally {
-        fetchBtn.disabled = false;
-        btnText.textContent = '情報を取得';
-        btnSpinner.classList.add('hidden');
-      }
-    }
-
-    fetchBtn.addEventListener('click', () => fetchData(videoIdInput.value));
     videoIdInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        fetchData(videoIdInput.value);
+        checkBtn.click();
       }
     });
-    downloadBtn.addEventListener('click', downloadVideo);
+
+    // 初期表示
+    renderSkeleton();
   })();
 </script>
 </body>
